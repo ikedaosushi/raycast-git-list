@@ -335,3 +335,59 @@ export async function findRepos(paths: string[], maxDepth: number, includeSubmod
 
   return foundRepos;
 }
+
+export interface BranchItem {
+  name: string;
+  type: "branch" | "worktree";
+  isCurrent: boolean;
+  worktreePath?: string;
+}
+
+export async function getLocalBranches(repoPath: string): Promise<BranchItem[]> {
+  const { stdout } = await execp(`git -C "${repoPath}" branch --format="%(refname:short)|%(HEAD)"`);
+  return stdout
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => {
+      const [name, head] = line.split("|");
+      return {
+        name: name.trim(),
+        type: "branch" as const,
+        isCurrent: head.trim() === "*",
+      };
+    });
+}
+
+export async function getWorktrees(repoPath: string): Promise<{ branch: string; path: string }[]> {
+  const { stdout } = await execp(`git -C "${repoPath}" worktree list --porcelain`);
+  const worktrees: { branch: string; path: string }[] = [];
+  let current: { branch: string; path: string } = { branch: "", path: "" };
+
+  for (const line of stdout.split("\n")) {
+    if (line.startsWith("worktree ")) {
+      current = { branch: "", path: line.replace("worktree ", "") };
+    } else if (line.startsWith("branch ")) {
+      current.branch = line.replace("branch refs/heads/", "");
+      worktrees.push(current);
+    }
+  }
+
+  return worktrees;
+}
+
+export async function getBranchesAndWorktrees(repoPath: string): Promise<BranchItem[]> {
+  const [branches, worktrees] = await Promise.all([
+    getLocalBranches(repoPath),
+    getWorktrees(repoPath),
+  ]);
+
+  const worktreeMap = new Map(worktrees.map((wt) => [wt.branch, wt.path]));
+
+  return branches.map((branch) => {
+    const wtPath = worktreeMap.get(branch.name);
+    if (wtPath && wtPath !== repoPath) {
+      return { ...branch, type: "worktree" as const, worktreePath: wtPath };
+    }
+    return branch;
+  });
+}

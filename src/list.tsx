@@ -9,6 +9,7 @@ import {
   Keyboard,
   List,
   open,
+  useNavigation,
 } from "@raycast/api";
 
 import path from "path";
@@ -17,6 +18,7 @@ import { useCachedPromise } from "@raycast/utils";
 import { GetInstalledBrowsers } from "get-installed-browsers";
 import { GitRepo, Preferences, tildifyPath, GitRepoService, GitRepoType, OpenWith, getGitHubUrl } from "./utils";
 import { useUsageBasedSort } from "./hooks/useUsageBasedSort";
+import { BranchList } from "./branch-list";
 
 const installedBrowsers = GetInstalledBrowsers().map(
   // Safari gets found in /Applications here but actually exists in
@@ -86,6 +88,7 @@ function GitRepoListItem(props: {
   revalidate: () => void;
   recordUsageHook?: (id: string | number) => void;
 }): JSX.Element {
+  const { push } = useNavigation();
   const preferences = props.preferences;
   const repo = props.repo;
   const isFavorite = props.isFavorite;
@@ -166,6 +169,14 @@ function GitRepoListItem(props: {
               ) : null;
             })()}
             <Action.OpenWith path={repo.fullPath} shortcut={{ modifiers: ["cmd"], key: "o" }} />
+            <Action
+              title="Open Branch"
+              icon={Icon.Switch}
+              shortcut={{ modifiers: ["cmd"], key: "b" }}
+              onAction={() => {
+                push(<BranchList repo={repo} />);
+              }}
+            />
             <Action
               title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               icon={isFavorite ? Icon.StarDisabled : Icon.Star}

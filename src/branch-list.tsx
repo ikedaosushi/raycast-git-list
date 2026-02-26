@@ -1,4 +1,19 @@
-import { Action, ActionPanel, Alert, Color, confirmAlert, Form, getPreferenceValues, Icon, Keyboard, List, open, showToast, Toast, useNavigation } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Alert,
+  Color,
+  confirmAlert,
+  Form,
+  getPreferenceValues,
+  Icon,
+  Keyboard,
+  List,
+  open,
+  showToast,
+  Toast,
+  useNavigation,
+} from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { BranchItem, getBranchesAndWorktrees, GitRepo, OpenWith, Preferences } from "./utils";
 import { execAsync } from "./utils/exec";
@@ -11,13 +26,24 @@ export function BranchList(props: { repo: GitRepo }) {
   return (
     <List isLoading={isLoading} navigationTitle={`Branches: ${repo.name}`}>
       {branches?.map((branch) => (
-        <BranchListItem key={branch.name} branch={branch} repo={repo} preferences={preferences} revalidate={revalidate} />
+        <BranchListItem
+          key={branch.name}
+          branch={branch}
+          repo={repo}
+          preferences={preferences}
+          revalidate={revalidate}
+        />
       ))}
     </List>
   );
 }
 
-function BranchListItem(props: { branch: BranchItem; repo: GitRepo; preferences: Preferences; revalidate: () => void }) {
+function BranchListItem(props: {
+  branch: BranchItem;
+  repo: GitRepo;
+  preferences: Preferences;
+  revalidate: () => void;
+}) {
   const { branch, repo, preferences, revalidate } = props;
   const { push } = useNavigation();
 
@@ -40,13 +66,28 @@ function BranchListItem(props: { branch: BranchItem; repo: GitRepo; preferences:
             <BranchOpenAction openWith={preferences.openWith1} branch={branch} repo={repo} />
             <BranchOpenAction openWith={preferences.openWith2} branch={branch} repo={repo} />
             {preferences.openWith3 && (
-              <BranchOpenAction openWith={preferences.openWith3} branch={branch} repo={repo} shortcut={{ modifiers: ["opt"], key: "return" }} />
+              <BranchOpenAction
+                openWith={preferences.openWith3}
+                branch={branch}
+                repo={repo}
+                shortcut={{ modifiers: ["opt"], key: "return" }}
+              />
             )}
             {preferences.openWith4 && (
-              <BranchOpenAction openWith={preferences.openWith4} branch={branch} repo={repo} shortcut={{ modifiers: ["ctrl"], key: "return" }} />
+              <BranchOpenAction
+                openWith={preferences.openWith4}
+                branch={branch}
+                repo={repo}
+                shortcut={{ modifiers: ["ctrl"], key: "return" }}
+              />
             )}
             {preferences.openWith5 && (
-              <BranchOpenAction openWith={preferences.openWith5} branch={branch} repo={repo} shortcut={{ modifiers: ["shift"], key: "return" }} />
+              <BranchOpenAction
+                openWith={preferences.openWith5}
+                branch={branch}
+                repo={repo}
+                shortcut={{ modifiers: ["shift"], key: "return" }}
+              />
             )}
           </ActionPanel.Section>
           <ActionPanel.Section>
@@ -62,6 +103,35 @@ function BranchListItem(props: { branch: BranchItem; repo: GitRepo; preferences:
               shortcut={{ modifiers: ["cmd", "shift"], key: "w" }}
               onAction={() => push(<CreateWorktreeForm repo={repo} fromBranch={branch.name} revalidate={revalidate} />)}
             />
+            {branch.type === "branch" && (
+              <Action
+                title="Convert to Worktree"
+                icon={Icon.ArrowRight}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "t" }}
+                onAction={async () => {
+                  try {
+                    const { stdout } = await execAsync(`gwt path "${branch.name}"`, repo.fullPath);
+                    const worktreePath = stdout.trim();
+
+                    const confirmed = await confirmAlert({
+                      title: "Convert to Worktree",
+                      message: `"${branch.name}" will be added as a worktree at:\n${worktreePath}`,
+                      primaryAction: {
+                        title: "Convert",
+                      },
+                    });
+                    if (!confirmed) return;
+
+                    await showToast(Toast.Style.Animated, "Converting to worktree…");
+                    await execAsync(`git worktree add "${worktreePath}" "${branch.name}"`, repo.fullPath);
+                    await showToast(Toast.Style.Success, `Converted ${branch.name} to worktree`);
+                    revalidate();
+                  } catch (e) {
+                    await showToast(Toast.Style.Failure, "Failed to convert to worktree", String(e));
+                  }
+                }}
+              />
+            )}
             {!branch.isCurrent && (
               <Action
                 title="Delete Branch"

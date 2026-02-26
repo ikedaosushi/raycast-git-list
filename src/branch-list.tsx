@@ -112,6 +112,10 @@ function BranchListItem(props: {
                   try {
                     const { stdout } = await execAsync(`gwt path "${branch.name}"`, repo.fullPath);
                     const worktreePath = stdout.trim();
+                    if (!worktreePath) {
+                      await showToast(Toast.Style.Failure, "Could not determine worktree path");
+                      return;
+                    }
 
                     const confirmed = await confirmAlert({
                       title: "Convert to Worktree",

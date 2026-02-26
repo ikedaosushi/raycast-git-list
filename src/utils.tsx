@@ -7,7 +7,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 const execp = promisify(exec);
 import parseGitConfig = require("parse-git-config");
-import parseGithubURL = require("parse-github-url");
+import gitUrlParse = require("git-url-parse");
 import getDefaultBrowser from "default-browser";
 
 export interface OpenWith {
@@ -139,12 +139,12 @@ function gitRemotes(path: string): RemoteRepo[] {
   if (gitConfig.remote != null) {
     for (const remoteName in gitConfig.remote) {
       const config = gitConfig.remote[remoteName] as GitRemote;
-      const parsed = parseGithubURL(config.url);
-      if (parsed?.host && parsed?.repo) {
+      const parsed = gitUrlParse(config.url);
+      if (parsed.resource && parsed.full_name) {
         repos = repos.concat({
           name: remoteName,
-          host: parsed?.host,
-          url: `https://${parsed?.host}/${parsed?.repo}`,
+          host: parsed.resource,
+          url: `https://${parsed.resource}/${parsed.full_name}`,
         });
       }
     }

@@ -42,11 +42,11 @@ export default function Command() {
   const [currentRepoType, onRepoTypeChange] = useState(GitRepoType.All);
 
   const gitRepos = gitReposState.data?.filter((gitRepo) => !favoriteGitReposState.data?.includes(gitRepo.fullPath));
-  const { data: sortedGitRepos, recordUsage } = useUsageBasedSort<GitRepo>(gitRepos || [], "gitRepos");
+  const { data: sortedGitRepos, recordUsage, isLoading: isUsageSortLoading } = useUsageBasedSort<GitRepo>(gitRepos || [], "gitRepos");
 
   return (
     <List
-      isLoading={gitReposState.isLoading}
+      isLoading={gitReposState.isLoading || isUsageSortLoading}
       filtering={{ keepSectionOrder: true }}
       searchBarAccessory={<GitRepoPropertyDropdown repoTypes={repoTypes} onRepoTypeChange={onRepoTypeChange} />}
     >
@@ -139,6 +139,14 @@ function GitRepoListItem(props: {
               />
             )}
             <Action
+              title="Open Branch"
+              icon={Icon.Switch}
+              shortcut={{ modifiers: ["cmd"], key: "b" }}
+              onAction={() => {
+                push(<BranchList repo={repo} />);
+              }}
+            />
+            <Action
               title="Open in All Applications"
               icon={Icon.ChevronUp}
               onAction={() => {
@@ -169,14 +177,6 @@ function GitRepoListItem(props: {
               ) : null;
             })()}
             <Action.OpenWith path={repo.fullPath} shortcut={{ modifiers: ["cmd"], key: "o" }} />
-            <Action
-              title="Open Branch"
-              icon={Icon.Switch}
-              shortcut={{ modifiers: ["cmd"], key: "b" }}
-              onAction={() => {
-                push(<BranchList repo={repo} />);
-              }}
-            />
             <Action
               title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
               icon={isFavorite ? Icon.StarDisabled : Icon.Star}

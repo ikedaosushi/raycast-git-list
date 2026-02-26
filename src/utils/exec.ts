@@ -1,6 +1,7 @@
-import { execSync } from "node:child_process";
+import { exec as execCb, execSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 
 const PATH_ADDITIONS = [
   join(homedir(), ".local/bin"),
@@ -29,4 +30,16 @@ export function exec(command: string, cwd?: string): string {
     timeout: 15_000,
     encoding: "utf-8",
   }).trim();
+}
+
+const execpRaw = promisify(execCb);
+
+export function execAsync(command: string, cwd?: string): Promise<{ stdout: string; stderr: string }> {
+  return execpRaw(command, {
+    shell: "/bin/zsh",
+    env,
+    cwd,
+    timeout: 15_000,
+    encoding: "utf-8",
+  });
 }

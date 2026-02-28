@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Form, Toast, open, showToast } from "@raycast/api";
+import { Action, ActionPanel, Form, Toast, open, popToRoot, showToast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { join } from "node:path";
 import { exec } from "./utils/exec";
@@ -164,6 +164,7 @@ export default function Command() {
       }
 
       await openAfterCreate(repoDir, openAfter);
+      await popToRoot();
     } catch (error) {
       await showToast({
         style: Toast.Style.Failure,
@@ -183,23 +184,13 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      <Form.Dropdown
-        id="hostname"
-        title="Hostname"
-        value={selectedHostname}
-        onChange={setSelectedHostname}
-      >
+      <Form.Dropdown id="hostname" title="Hostname" value={selectedHostname} onChange={setSelectedHostname}>
         {hostnames.map((h) => (
           <Form.Dropdown.Item key={h} value={h} title={h} />
         ))}
       </Form.Dropdown>
 
-      <Form.Dropdown
-        id="org"
-        title="Org / Owner"
-        value={selectedOrg}
-        onChange={setSelectedOrg}
-      >
+      <Form.Dropdown id="org" title="Org / Owner" value={selectedOrg} onChange={setSelectedOrg}>
         {orgs.map((o) => (
           <Form.Dropdown.Item key={o} value={o} title={o} />
         ))}
@@ -222,9 +213,9 @@ export default function Command() {
 
       <Form.Checkbox id="initialCommit" label="Create initial commit" defaultValue={true} />
 
-      <Form.Dropdown id="openAfter" title="Open After Create" defaultValue="cursor">
-        <Form.Dropdown.Item value="cursor" title="Cursor" />
+      <Form.Dropdown id="openAfter" title="Open After Create" defaultValue="vscode">
         <Form.Dropdown.Item value="vscode" title="VS Code" />
+        <Form.Dropdown.Item value="cursor" title="Cursor" />
         <Form.Dropdown.Item value="finder" title="Finder" />
         <Form.Dropdown.Item value="none" title="None" />
       </Form.Dropdown>
